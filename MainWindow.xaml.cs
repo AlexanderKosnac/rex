@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using rex.ViewModel;
 
 namespace rex
 {
@@ -19,6 +20,8 @@ namespace rex
         public MainWindow()
         {
             InitializeComponent();
+            MainViewModel vm = new MainViewModel();
+            DataContext = vm;
         }
     }
 }
