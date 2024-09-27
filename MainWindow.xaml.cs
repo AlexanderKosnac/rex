@@ -20,7 +20,7 @@ namespace rex
         public MainWindow()
         {
             InitializeComponent();
-            MainViewModel vm = new MainViewModel();
+            MainViewModel vm = new();
             DataContext = vm;
         }
     }

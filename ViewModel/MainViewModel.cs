@@ -26,39 +26,46 @@ namespace rex.ViewModel
             FetchRegistryEntriesAsync();
         }
 
-        private void FetchRegistryEntriesAsync()
-        {
-            Entries.Clear();
-            RegistryKey[] rootKeys = [
-                Registry.ClassesRoot,
-                Registry.CurrentUser,
-                Registry.LocalMachine,
-                Registry.Users,
-                Registry.CurrentConfig
-            ];
+        public ObservableCollection<bool> UsedRootKeys { get; set; }
 
-            foreach (RegistryKey rootKey in rootKeys)
-            {
-                Console.WriteLine($"Root Hive: {rootKey.Name}");
-                TraverseRegistryKeys(rootKey, "");
-            }
+        List<RegistryKey> RootKeys = [
+            Registry.ClassesRoot,
+            Registry.CurrentUser,
+            Registry.LocalMachine,
+            Registry.Users,
+            Registry.CurrentConfig
+        ];
+
+        public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
+        public RelayCommand LoadDataCommand => new(execute => FetchRegistryEntries());
+
+        public MainViewModel()
+        {
+            Entries = [];
+            UsedRootKeys = [false, false, false, false, false];
         }
 
-        private void TraverseRegistryKeys(RegistryKey rootKey, string subKeyPath)
+        private void FetchRegistryEntries()
         {
-            List<RegistryEntry> ReList = [];
+            Entries.Clear();
+            LoadingProgress = 0;
+            List<RegistryKey> rootKeys = RootKeys
+                .Zip(UsedRootKeys, (obj, used) => new { obj, used })
+                .Where(x => x.used)
+                .Select(x => x.obj)
+                .ToList();
 
             try
             {
-                using (RegistryKey currentKey = subKeyPath == "" ? rootKey : rootKey.OpenSubKey(subKeyPath))
+                using (RegistryKey currentKey = string.IsNullOrEmpty(subKeyPath) ? rootKey : rootKey.OpenSubKey(subKeyPath))
                 {
                     if (currentKey != null)
                     {
                         foreach (string subKeyName in currentKey.GetSubKeyNames())
                         {
                             string fullSubKeyPath = subKeyPath == "" ? subKeyName : $"{subKeyPath}\\{subKeyName}";
-                            TraverseRegistryKeys(rootKey, fullSubKeyPath); // Recursion call
-                        }
+                            TraverseRegistryKeys(rootKey, fullSubKeyPath);
+                        });
 
                         foreach (string valueName in currentKey.GetValueNames())
                         {
@@ -81,7 +88,7 @@ namespace rex.ViewModel
 
         private void OpenAbout()
         {
-            HelpWindow w = new HelpWindow();
+            HelpWindow w = new();
             w.ShowDialog();
         }
     }
