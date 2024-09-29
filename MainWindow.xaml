@@ -31,7 +31,13 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <CheckBox Content="HKEY__CLASSES__ROOT" IsChecked="{Binding UsedRootKeys[0]}" />
                     <CheckBox Content="HKEY__CURRENT__USER" IsChecked="{Binding UsedRootKeys[1]}" />
                     <CheckBox Content="HKEY__LOCAL__MACHINE" IsChecked="{Binding UsedRootKeys[2]}" />
@@ -39,7 +45,7 @@
                     <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
                 </StackPanel>
 
-                <Button Grid.Row="0" Content="Button" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}"/>
+                <Button Grid.Column="2" Content="Search" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
             </Grid>
 
             <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="">

@@ -23,7 +23,14 @@ namespace rex.ViewModel
     {
         public ObservableCollection<RegistryEntry> Entries { get; set; }
 
-        public RelayCommand OpenAboutCommand => new RelayCommand(execute => OpenAbout());
+        public bool searchInactive = true;
+        public bool SearchInactive {
+            get { return searchInactive; }
+            set {
+                searchInactive = value;
+                OnPropertyChanged();
+            }
+        }
 
         public MainViewModel()
         {
@@ -52,6 +59,7 @@ namespace rex.ViewModel
 
         private async Task FetchRegistryEntries()
         {
+            SearchInactive = false;
             Entries.Clear();
             LoadingProgress = 0;
             List<RegistryKey> rootKeys = RootKeys
@@ -65,6 +73,7 @@ namespace rex.ViewModel
                 await Task.Run(() => RecursiveRegistryValueCollector(rootKey, ""));
                 LoadingProgress += 100 / rootKeys.Count;
             }
+            SearchInactive = true;
         }
 
         private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey)
