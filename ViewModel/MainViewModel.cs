@@ -32,10 +32,13 @@ namespace rex.ViewModel
             }
         }
 
-        public MainViewModel()
-        {
-            Entries = new ObservableCollection<RegistryEntry>();
-            FetchRegistryEntriesAsync();
+        private int loadingProgress;
+        public int LoadingProgress {
+            get { return loadingProgress; }
+            set {
+                loadingProgress = value;
+                OnPropertyChanged();
+            }
         }
 
         public ObservableCollection<bool> UsedRootKeys { get; set; }
@@ -77,34 +80,29 @@ namespace rex.ViewModel
         }
 
         private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey)
-            {
+        {
             try
             {
-            using (RegistryKey key = baseKey.OpenSubKey(subKey))
+                using (RegistryKey key = baseKey.OpenSubKey(subKey))
                 {
-                if (key != null)
+                    if (key != null)
                     {
-                    foreach (string valueName in key.GetValueNames())
+                        foreach (string valueName in key.GetValueNames())
                         {
-                        Application.Current.Dispatcher.Invoke(() => Entries.Add(new RegistryEntry(key, valueName)));
-                    }
+                            Application.Current.Dispatcher.Invoke(() => Entries.Add(new RegistryEntry(key, valueName)));
+                        }
 
-                    foreach (string subKeyName in key.GetSubKeyNames())
+                        foreach (string subKeyName in key.GetSubKeyNames())
                         {
-                        RecursiveRegistryValueCollector(key, subKeyName);
-                }
-            }
+                            RecursiveRegistryValueCollector(key, subKeyName);
+                        }
+                    }
                 }
             }
             catch (System.Security.SecurityException)
             {
                 Debug.WriteLine($"Not allowed to open key {subKey}");
             }
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                ReList.ForEach(Entries.Add);
-            });
         }
 
         private void OpenAbout()
