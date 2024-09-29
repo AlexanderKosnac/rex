@@ -11,6 +11,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Windows;
+using System.Diagnostics;
+using System.Windows.Shell;
+using System.Threading.Tasks;
+using System.Globalization;
+using System.Windows.Threading;
 
 namespace rex.ViewModel
 {
@@ -37,7 +42,7 @@ namespace rex.ViewModel
         ];
 
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
-        public RelayCommand LoadDataCommand => new(execute => FetchRegistryEntries());
+        public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
 
         public MainViewModel()
         {
@@ -45,7 +50,7 @@ namespace rex.ViewModel
             UsedRootKeys = [false, false, false, false, false];
         }
 
-        private void FetchRegistryEntries()
+        private async Task FetchRegistryEntries()
         {
             Entries.Clear();
             LoadingProgress = 0;
@@ -55,24 +60,27 @@ namespace rex.ViewModel
                 .Select(x => x.obj)
                 .ToList();
 
-            try
+            foreach (RegistryKey rootKey in rootKeys)
             {
-                using (RegistryKey currentKey = string.IsNullOrEmpty(subKeyPath) ? rootKey : rootKey.OpenSubKey(subKeyPath))
-                {
-                    if (currentKey != null)
-                    {
-                        foreach (string subKeyName in currentKey.GetSubKeyNames())
-                        {
-                            string fullSubKeyPath = subKeyPath == "" ? subKeyName : $"{subKeyPath}\\{subKeyName}";
-                            TraverseRegistryKeys(rootKey, fullSubKeyPath);
-                        });
+                await Task.Run(() => RecursiveRegistryValueCollector(rootKey, ""));
+                LoadingProgress += 100 / rootKeys.Count;
+            }
+        }
 
-                        foreach (string valueName in currentKey.GetValueNames())
+        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey)
+            {
+            using (RegistryKey key = baseKey.OpenSubKey(subKey))
+                {
+                if (key != null)
+                    {
+                    foreach (string valueName in key.GetValueNames())
                         {
-                            object value = currentKey.GetValue(valueName);
-                            ReList.Add(new RegistryEntry(currentKey, valueName));
-                        }
+                        Application.Current.Dispatcher.Invoke(() => Entries.Add(new RegistryEntry(key, valueName)));
                     }
+
+                    foreach (string subKeyName in key.GetSubKeyNames())
+                        {
+                        RecursiveRegistryValueCollector(key, subKeyName);
                 }
             }
             catch (Exception ex)
