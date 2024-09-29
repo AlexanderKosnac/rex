@@ -69,6 +69,8 @@ namespace rex.ViewModel
 
         private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey)
             {
+            try
+            {
             using (RegistryKey key = baseKey.OpenSubKey(subKey))
                 {
                 if (key != null)
@@ -83,9 +85,11 @@ namespace rex.ViewModel
                         RecursiveRegistryValueCollector(key, subKeyName);
                 }
             }
-            catch (Exception ex)
+                }
+            }
+            catch (System.Security.SecurityException)
             {
-                Console.WriteLine($"Error accessing subkey: {subKeyPath}, Exception: {ex.Message}");
+                Debug.WriteLine($"Not allowed to open key {subKey}");
             }
 
             Application.Current.Dispatcher.Invoke(() =>

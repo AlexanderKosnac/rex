@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -52,7 +53,7 @@ namespace rex.MVVM
                 }
                 catch (Exception ex)
                 {
-                    // Handle exceptions
+                    Debug.WriteLine($"Failed to execute command: {ex}");
                 }
             }
         }
