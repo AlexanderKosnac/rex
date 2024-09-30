@@ -22,21 +22,12 @@ namespace rex.Model
         static object? getValue(RegistryKey Key, string ValueName)
         {
             object value = Key.GetValue(ValueName) ?? "";
-            switch (Key.GetValueKind(ValueName))
+            return Key.GetValueKind(ValueName) switch
             {
-                case RegistryValueKind.Binary:
-                    return System.Text.Encoding.UTF8.GetString((byte[]) value);
-                case RegistryValueKind.MultiString:
-                    return string.Join("", (string[]) value);
-                case RegistryValueKind.None:
-                case RegistryValueKind.Unknown:
-                case RegistryValueKind.String:
-                case RegistryValueKind.ExpandString:
-                case RegistryValueKind.DWord:
-                case RegistryValueKind.QWord:
-                default:
-                    return value;
-            }
+                RegistryValueKind.Binary => System.Text.Encoding.UTF8.GetString((byte[])value),
+                RegistryValueKind.MultiString => string.Join("", (string[])value),
+                _ => value,
+            };
         }
     }
 }
