@@ -16,6 +16,9 @@ using System.Windows.Shell;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Windows.Threading;
+using System.Windows.Controls;
+using System.Reflection.PortableExecutable;
+using System.IO;
 
 namespace rex.ViewModel
 {
@@ -65,7 +68,7 @@ namespace rex.ViewModel
             }
         }
 
-        List<RegistryValueKind> kindsSearch;
+        List<RegistryValueKind> kindsSearch = [];
 
         private int loadingProgress = 0;
         public int LoadingProgress
@@ -113,6 +116,7 @@ namespace rex.ViewModel
         ];
 
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
+        public RelayCommand ExportDataCommand => new(execute => ExportData());
         public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
 
         public MainViewModel()
@@ -174,6 +178,20 @@ namespace rex.ViewModel
             }
         }
 
+        private void ExportData()
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Filter = "CSV file (*.csv)|*.csv",
+                FileName = "export.csv"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                ExportRegistryEntriesToCsv([.. Entries], saveFileDialog.FileName);
+            }
+        }
+
         private void OpenAbout()
         {
             HelpWindow w = new();
@@ -187,6 +205,17 @@ namespace rex.ViewModel
                 .Where(x => x.used)
                 .Select(x => x.obj)
                 .ToList();
+        }
+
+        private static void ExportRegistryEntriesToCsv(List<RegistryEntry> Entries, string filePath)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Path,Name,Value,Kind");
+            foreach (RegistryEntry re in Entries)
+            {
+                sb.AppendLine(re.ToCSV());
+            }
+            File.WriteAllText(filePath, sb.ToString());
         }
     }
 }

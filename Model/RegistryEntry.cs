@@ -19,6 +19,11 @@ namespace rex.Model
         public object Value { get; set; } = RegistryEntry.getValue(Key, ValueName);
         public RegistryValueKind Kind { get; set; } = Key.GetValueKind(ValueName);
 
+        public string ToCSV()
+        {
+            return string.Join(",", [KeyPath, ValueName, Value, Kind.ToString()]);
+        }
+
         static object getValue(RegistryKey Key, string ValueName)
         {
             object value = Key.GetValue(ValueName) ?? "";
