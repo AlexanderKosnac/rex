@@ -18,8 +18,6 @@
                 <MenuItem Header="Export Data" IsEnabled="False"/>
             </MenuItem>
             <MenuItem Header="Help">
-                <MenuItem Header="" IsEnabled="False"/>
-                <Separator/>
                 <MenuItem Header="About ReX" Command="{Binding OpenAboutCommand}"/>
             </MenuItem>
         </Menu>
@@ -37,7 +35,29 @@
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Grid Grid.Column="0" Margin="5,5,5,5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Row="0" Grid.Column="0" Content="Path" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding PathSearch}" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="1" Grid.Column="0" Content="Name" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding NameSearch}" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="2" Grid.Column="0" Content="Value" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding ValueSearch}" VerticalAlignment="Center"/>
+                </Grid>
+
+
+                <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5">
                     <CheckBox Content="Binary" IsChecked="{Binding UsedValueKinds[0]}" />
                     <CheckBox Content="MultiString" IsChecked="{Binding UsedValueKinds[1]}" />
                     <CheckBox Content="None" IsChecked="{Binding UsedValueKinds[2]}" />
@@ -48,7 +68,7 @@
                     <CheckBox Content="QWord" IsChecked="{Binding UsedValueKinds[7]}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5">
                     <CheckBox Content="HKEY__CLASSES__ROOT" IsChecked="{Binding UsedRootKeys[0]}" />
                     <CheckBox Content="HKEY__CURRENT__USER" IsChecked="{Binding UsedRootKeys[1]}" />
                     <CheckBox Content="HKEY__LOCAL__MACHINE" IsChecked="{Binding UsedRootKeys[2]}" />
@@ -56,7 +76,7 @@
                     <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
                 </StackPanel>
 
-                <Button Grid.Column="2" Content="Search" Margin="0,0,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
+                <Button Grid.Column="2" Content="Search" Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
             </Grid>
 
             <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="">

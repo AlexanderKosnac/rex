@@ -23,6 +23,39 @@ namespace rex.ViewModel
     {
         public ObservableCollection<RegistryEntry> Entries { get; set; }
 
+        public string pathSearch = "";
+        public string PathSearch
+        {
+            get { return pathSearch; }
+            set
+            {
+                pathSearch = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string nameSearch = "";
+        public string NameSearch
+        {
+            get { return nameSearch; }
+            set
+            {
+                nameSearch = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string valueSearch = "";
+        public string ValueSearch
+        {
+            get { return valueSearch; }
+            set
+            {
+                valueSearch = value;
+                OnPropertyChanged();
+            }
+        }
+
         public bool searchInactive = true;
         public bool SearchInactive {
             get { return searchInactive; }
@@ -31,6 +64,8 @@ namespace rex.ViewModel
                 OnPropertyChanged();
             }
         }
+
+        List<RegistryValueKind> kindsSearch;
 
         private int loadingProgress = 0;
         public int LoadingProgress
@@ -77,8 +112,6 @@ namespace rex.ViewModel
             Registry.CurrentConfig
         ];
 
-        List<RegistryValueKind> valueKinds;
-
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
         public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
 
@@ -94,7 +127,7 @@ namespace rex.ViewModel
             SearchInactive = false;
             Entries.Clear();
             LoadingProgress = 0;
-            valueKinds = MainViewModel.GetSelectedItems(ValueKinds, UsedValueKinds.ToList());
+            kindsSearch = MainViewModel.GetSelectedItems(ValueKinds, UsedValueKinds.ToList());
             List<RegistryKey> rootKeys = MainViewModel.GetSelectedItems(RootKeys, UsedRootKeys.ToList());
 
             foreach (RegistryKey rootKey in rootKeys)
@@ -117,7 +150,12 @@ namespace rex.ViewModel
                         {
                             RegistryEntry re = new(key, valueName);
                             MaxValues++;
-                            if (valueKinds.Contains(re.Kind))
+
+                            bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
+                            bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
+                            bool matchesByValue = ValueSearch == "" || (re.Value ?? "NULL").ToString().Contains(ValueSearch);
+                            bool matchesByKind = kindsSearch.Contains(re.Kind);
+                            if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                             {
                                 Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
                             }

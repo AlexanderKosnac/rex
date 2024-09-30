@@ -16,10 +16,10 @@ namespace rex.Model
         public RegistryKey Key { get; set; } = Key;
         public string KeyPath { get; set; } = Key.ToString();
         public string ValueName { get; set; } = ValueName == "" ? "(Default)" : ValueName;
-        public object? Value { get; set; } = RegistryEntry.getValue(Key, ValueName);
+        public object Value { get; set; } = RegistryEntry.getValue(Key, ValueName);
         public RegistryValueKind Kind { get; set; } = Key.GetValueKind(ValueName);
 
-        static object? getValue(RegistryKey Key, string ValueName)
+        static object getValue(RegistryKey Key, string ValueName)
         {
             object value = Key.GetValue(ValueName) ?? "";
             return Key.GetValueKind(ValueName) switch
