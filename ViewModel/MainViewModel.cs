@@ -32,18 +32,33 @@ namespace rex.ViewModel
             }
         }
 
-        private int loadingProgress;
-        public int LoadingProgress {
+        private int loadingProgress = 0;
+        public int LoadingProgress
+        {
             get { return loadingProgress; }
-            set {
+            set
+            {
                 loadingProgress = value;
                 OnPropertyChanged();
             }
         }
 
+        public ObservableCollection<bool> UsedValueKinds { get; set; }
+
+        readonly List<RegistryValueKind> ValueKinds = [
+            RegistryValueKind.Binary,
+            RegistryValueKind.MultiString,
+            RegistryValueKind.None,
+            RegistryValueKind.Unknown,
+            RegistryValueKind.String,
+            RegistryValueKind.ExpandString,
+            RegistryValueKind.DWord,
+            RegistryValueKind.QWord
+        ];
+
         public ObservableCollection<bool> UsedRootKeys { get; set; }
 
-        List<RegistryKey> RootKeys = [
+        readonly List<RegistryKey> RootKeys = [
             Registry.ClassesRoot,
             Registry.CurrentUser,
             Registry.LocalMachine,
@@ -51,13 +66,16 @@ namespace rex.ViewModel
             Registry.CurrentConfig
         ];
 
+        List<RegistryValueKind> valueKinds;
+
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
         public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
 
         public MainViewModel()
         {
             Entries = [];
-            UsedRootKeys = [false, false, false, false, false];
+            UsedValueKinds = new(Enumerable.Repeat(true, ValueKinds.Count).ToList());
+            UsedRootKeys = new(Enumerable.Repeat(false, RootKeys.Count).ToList());
         }
 
         private async Task FetchRegistryEntries()
@@ -65,11 +83,8 @@ namespace rex.ViewModel
             SearchInactive = false;
             Entries.Clear();
             LoadingProgress = 0;
-            List<RegistryKey> rootKeys = RootKeys
-                .Zip(UsedRootKeys, (obj, used) => new { obj, used })
-                .Where(x => x.used)
-                .Select(x => x.obj)
-                .ToList();
+            valueKinds = MainViewModel.GetSelectedItems(ValueKinds, UsedValueKinds.ToList());
+            List<RegistryKey> rootKeys = MainViewModel.GetSelectedItems(RootKeys, UsedRootKeys.ToList());
 
             foreach (RegistryKey rootKey in rootKeys)
             {
@@ -89,7 +104,11 @@ namespace rex.ViewModel
                     {
                         foreach (string valueName in key.GetValueNames())
                         {
-                            Application.Current.Dispatcher.Invoke(() => Entries.Add(new RegistryEntry(key, valueName)));
+                            RegistryEntry re = new(key, valueName);
+                            if (valueKinds.Contains(re.Kind))
+                            {
+                                Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
+                            }
                         }
 
                         foreach (string subKeyName in key.GetSubKeyNames())
@@ -109,6 +128,15 @@ namespace rex.ViewModel
         {
             HelpWindow w = new();
             w.ShowDialog();
+        }
+
+        private static List<T> GetSelectedItems<T>(List<T> Items, List<bool> Selected)
+        {
+            return Items
+                .Zip(Selected, (obj, used) => new { obj, used })
+                .Where(x => x.used)
+                .Select(x => x.obj)
+                .ToList();
         }
     }
 }
