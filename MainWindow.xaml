@@ -26,16 +26,27 @@
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="120"/>
+                <RowDefinition Height="140"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <CheckBox Content="Binary" IsChecked="{Binding UsedValueKinds[0]}" />
+                    <CheckBox Content="MultiString" IsChecked="{Binding UsedValueKinds[1]}" />
+                    <CheckBox Content="None" IsChecked="{Binding UsedValueKinds[2]}" />
+                    <CheckBox Content="Unknown" IsChecked="{Binding UsedValueKinds[3]}" />
+                    <CheckBox Content="String" IsChecked="{Binding UsedValueKinds[4]}" />
+                    <CheckBox Content="ExpandString" IsChecked="{Binding UsedValueKinds[5]}" />
+                    <CheckBox Content="DWord" IsChecked="{Binding UsedValueKinds[6]}" />
+                    <CheckBox Content="QWord" IsChecked="{Binding UsedValueKinds[7]}" />
+                </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <CheckBox Content="HKEY__CLASSES__ROOT" IsChecked="{Binding UsedRootKeys[0]}" />
@@ -45,7 +56,7 @@
                     <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
                 </StackPanel>
 
-                <Button Grid.Column="2" Content="Search" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
+                <Button Grid.Column="2" Content="Search" Margin="0,0,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
             </Grid>
 
             <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="">
@@ -60,7 +71,14 @@
 
         <StatusBar Grid.Row="2">
             <StatusBarItem>
-                <TextBlock Text="{Binding Entries.Count, StringFormat=Values: {0}}"/>
+                <TextBlock>
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="Values: {0} / {1}">
+                            <Binding Path="Entries.Count"/>
+                            <Binding Path="MaxValues"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>

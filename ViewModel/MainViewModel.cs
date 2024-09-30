@@ -43,6 +43,17 @@ namespace rex.ViewModel
             }
         }
 
+        private int maxValues = 0;
+        public int MaxValues
+        {
+            get { return maxValues; }
+            set
+            {
+                maxValues = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ObservableCollection<bool> UsedValueKinds { get; set; }
 
         readonly List<RegistryValueKind> ValueKinds = [
@@ -105,6 +116,7 @@ namespace rex.ViewModel
                         foreach (string valueName in key.GetValueNames())
                         {
                             RegistryEntry re = new(key, valueName);
+                            MaxValues++;
                             if (valueKinds.Contains(re.Kind))
                             {
                                 Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
