@@ -146,29 +146,27 @@ namespace rex.ViewModel
         {
             try
             {
-                using (RegistryKey key = baseKey.OpenSubKey(subKey))
+                using RegistryKey? key = baseKey.OpenSubKey(subKey);
+                if (key != null)
                 {
-                    if (key != null)
+                    foreach (string valueName in key.GetValueNames())
                     {
-                        foreach (string valueName in key.GetValueNames())
-                        {
-                            RegistryEntry re = new(key, valueName);
-                            MaxValues++;
+                        RegistryEntry re = new(key, valueName);
+                        MaxValues++;
 
-                            bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
-                            bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
-                            bool matchesByValue = ValueSearch == "" || (re.Value ?? "NULL").ToString().Contains(ValueSearch);
-                            bool matchesByKind = kindsSearch.Contains(re.Kind);
-                            if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
-                            {
-                                Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
-                            }
-                        }
-
-                        foreach (string subKeyName in key.GetSubKeyNames())
+                        bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
+                        bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
+                        bool matchesByValue = ValueSearch == "" || (re.Value ?? "NULL").ToString().Contains(ValueSearch);
+                        bool matchesByKind = kindsSearch.Contains(re.Kind);
+                        if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                         {
-                            RecursiveRegistryValueCollector(key, subKeyName);
+                            Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
                         }
+                    }
+
+                    foreach (string subKeyName in key.GetSubKeyNames())
+                    {
+                        RecursiveRegistryValueCollector(key, subKeyName);
                     }
                 }
             }
