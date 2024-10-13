@@ -136,7 +136,13 @@ namespace rex.ViewModel
 
             foreach (RegistryKey rootKey in rootKeys)
             {
-                await Task.Run(() => RecursiveRegistryValueCollector(rootKey, ""));
+                Task task = Task.Run(() => RecursiveRegistryValueCollector(rootKey, "", tokenSource.Token));
+                tasks.Add(task);
+            }
+            while (tasks.Count > 0)
+            {
+                Task done = await Task.WhenAny(tasks);
+                tasks.Remove(done);
                 LoadingProgress += 100 / rootKeys.Count;
             }
             SearchInactive = true;
