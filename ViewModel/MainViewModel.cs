@@ -59,11 +59,11 @@ namespace rex.ViewModel
             }
         }
 
-        public bool searchInactive = true;
-        public bool SearchInactive {
-            get { return searchInactive; }
+        public bool searchActive = false;
+        public bool SearchActive {
+            get { return searchActive; }
             set {
-                searchInactive = value;
+                searchActive = value;
                 OnPropertyChanged();
             }
         }
@@ -118,6 +118,9 @@ namespace rex.ViewModel
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
         public RelayCommand ExportDataCommand => new(execute => ExportData());
         public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
+        public RelayCommand CancelSearchCommand => new(execute => CancelSearch());
+
+        CancellationTokenSource tokenSource = new();
 
         public MainViewModel()
         {
@@ -128,12 +131,17 @@ namespace rex.ViewModel
 
         private async Task FetchRegistryEntries()
         {
-            SearchInactive = false;
+            tokenSource.Dispose();
+            tokenSource = new();
+
+            SearchActive = true;
             Entries.Clear();
             LoadingProgress = 0;
+            MaxValues = 0;
             kindsSearch = MainViewModel.GetSelectedItems(ValueKinds, UsedValueKinds.ToList());
             List<RegistryKey> rootKeys = MainViewModel.GetSelectedItems(RootKeys, UsedRootKeys.ToList());
 
+            List<Task> tasks = [];
             foreach (RegistryKey rootKey in rootKeys)
             {
                 Task task = Task.Run(() => RecursiveRegistryValueCollector(rootKey, "", tokenSource.Token));
@@ -145,10 +153,16 @@ namespace rex.ViewModel
                 tasks.Remove(done);
                 LoadingProgress += 100 / rootKeys.Count;
             }
-            SearchInactive = true;
+
+            SearchActive = false;
         }
 
-        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey)
+        private void CancelSearch()
+        {
+            tokenSource.Cancel();
+        }
+
+        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, CancellationToken token)
         {
             try
             {
@@ -157,6 +171,9 @@ namespace rex.ViewModel
                 {
                     foreach (string valueName in key.GetValueNames())
                     {
+                        if (token.IsCancellationRequested)
+                            return;
+
                         RegistryEntry re = new(key, valueName);
                         MaxValues++;
 
@@ -172,7 +189,7 @@ namespace rex.ViewModel
 
                     foreach (string subKeyName in key.GetSubKeyNames())
                     {
-                        RecursiveRegistryValueCollector(key, subKeyName);
+                        RecursiveRegistryValueCollector(key, subKeyName, token);
                     }
                 }
             }

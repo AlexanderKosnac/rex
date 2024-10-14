@@ -5,8 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:rex"
         xmlns:view="clr-namespace:rex.Views"
+        xmlns:converter="clr-namespace:rex.Converters"
         mc:Ignorable="d"
         Title="ReX - Registry Explorer" Height="450" Width="800">
+    <Window.Resources>
+        <converter:InvertBoolConverter x:Key="InvertBoolConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -76,7 +80,10 @@
                     <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
                 </StackPanel>
 
-                <Button Grid.Column="2" Content="Search" Margin="0,0,5,5" HorizontalAlignment="Right" VerticalAlignment="Bottom" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchInactive}"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5" >
+                    <Button Content="Search" Margin="0,0,5,0"  Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchActive, Converter={StaticResource InvertBoolConverter}, Mode=OneWay}"/>
+                    <Button Content="Cancel" Command="{Binding CancelSearchCommand}" IsEnabled="{Binding SearchActive}"/>
+                </StackPanel>
             </Grid>
 
             <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="">
