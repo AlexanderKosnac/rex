@@ -1,23 +1,11 @@
 ﻿using rex.Model;
 using rex.MVVM;
 using rex.Views;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Windows;
 using System.Diagnostics;
-using System.Windows.Shell;
-using System.Threading.Tasks;
-using System.Globalization;
-using System.Windows.Threading;
-using System.Windows.Controls;
-using System.Reflection.PortableExecutable;
 using System.IO;
 
 namespace rex.ViewModel
