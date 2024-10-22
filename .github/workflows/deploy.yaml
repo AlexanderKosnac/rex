@@ -14,19 +14,25 @@ jobs:
   deploy:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      - run: dotnet restore ${{ env.PROJECT_PATH }} --runtime win-x64
+      - name: .NET Restore Dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }} --runtime win-x64
 
-      - run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release
+      - name: .NET Build
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release
 
-      - run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release -p:PublishSingleFile=true -p:SelfContained=true -p:RuntimeIdentifier=win-x64
+      - name: .NET Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release -p:PublishSingleFile=true -p:SelfContained=true -p:RuntimeIdentifier=win-x64
 
-      - uses: actions/create-release@v1
+      - name: Create GitHub release
+        uses: actions/create-release@v1
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,11 +42,13 @@ jobs:
           draft: false
           prerelease: false
 
-      - run: |
+      - name: Proper name for exe
+        run: |
           $newFileName = "${{ github.event.repository.name }}-${{ github.ref_name }}.exe"
           Rename-Item -Path "bin/Release/net8.0-windows/win-x64/publish/rex.exe" -NewName $newFileName
 
-      - uses: svenstaro/upload-release-action@v2
+      - name: Add exe to GitHub release
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: bin/Release/net8.0-windows/win-x64/publish/${{ github.event.repository.name }}-${{ github.ref_name }}.exe
