@@ -5,9 +5,9 @@ namespace rex.MVVM
 {
     internal class RelayCommand : ICommand
     {
-        private readonly Func<object, Task> executeAsync;
-        private readonly Action<object> execute;
-        private readonly Func<object, bool> canExecute;
+        private readonly Func<object, Task>? executeAsync;
+        private readonly Action<object>? execute;
+        private readonly Func<object, bool>? canExecute;
 
         public event EventHandler? CanExecuteChanged
         {
@@ -15,16 +15,14 @@ namespace rex.MVVM
             remove { CommandManager.RequerySuggested -= value; }
         }
 
-        public RelayCommand(Func<object, Task> executeAsync, Func<object, bool> canExecute = null)
+        public RelayCommand(Func<object, Task> executeAsync, Func<object, bool>? canExecute = null)
         {
             this.executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
-            this.execute = null;
             this.canExecute = canExecute;
         }
 
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        public RelayCommand(Action<object> execute, Func<object, bool>? canExecute = null)
         {
-            this.executeAsync = null;
             this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
             this.canExecute = canExecute;
         }
@@ -44,9 +42,9 @@ namespace rex.MVVM
                     {
                         await executeAsync(parameter);
                     }
-                    else if (execute != null)
+                    else
                     {
-                        execute(parameter);
+                        execute?.Invoke(parameter);
                     }
                 }
                 catch (Exception ex)

@@ -167,7 +167,7 @@ namespace rex.ViewModel
 
                         bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
                         bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
-                        bool matchesByValue = ValueSearch == "" || (re.Value ?? "NULL").ToString().Contains(ValueSearch);
+                        bool matchesByValue = ValueSearch == "" || re.Value.Contains(ValueSearch);
                         bool matchesByKind = kindsSearch.Contains(re.Kind);
                         if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                         {
