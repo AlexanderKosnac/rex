@@ -29,11 +29,15 @@ namespace rex.MVVM
 
         public bool CanExecute(object? parameter)
         {
-            return canExecute == null || canExecute(parameter);
+            if (parameter is null)
+                return false;
+            return canExecute is null || canExecute(parameter);
         }
 
         public async void Execute(object? parameter)
         {
+            if (parameter is null)
+                return;
             if (CanExecute(parameter))
             {
                 try
