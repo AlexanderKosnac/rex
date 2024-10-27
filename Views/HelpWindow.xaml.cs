@@ -5,16 +5,12 @@ using System.Windows.Navigation;
 
 namespace rex.Views
 {
-    /// <summary>
-    /// Interaction logic for HelpWindow.xaml
-    /// </summary>
     public partial class HelpWindow : Window
     {
         public HelpWindow()
         {
             InitializeComponent();
-            HelpViewModel vm = new HelpViewModel();
-            DataContext = vm;
+            DataContext = new HelpViewModel();
         }
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)

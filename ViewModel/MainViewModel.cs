@@ -1,12 +1,12 @@
-﻿using rex.Model;
+﻿using Microsoft.Win32;
+using rex.Model;
 using rex.MVVM;
 using rex.Views;
 using System.Collections.ObjectModel;
-using System.Text;
-using Microsoft.Win32;
-using System.Windows;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Windows;
 
 namespace rex.ViewModel
 {
