@@ -103,12 +103,12 @@ namespace rex.ViewModel
             Registry.CurrentConfig
         ];
 
+        CancellationTokenSource? tokenSource;
+
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
         public RelayCommand ExportDataCommand => new(execute => ExportData());
-        public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries());
-        public RelayCommand CancelSearchCommand => new(execute => CancelSearch());
-
-        CancellationTokenSource tokenSource = new();
+        public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries(), canExecute => !SearchActive);
+        public RelayCommand CancelSearchCommand => new(execute => CancelSearch(), canExecute => SearchActive);
 
         public MainViewModel()
         {
@@ -119,15 +119,14 @@ namespace rex.ViewModel
 
         private async Task FetchRegistryEntries()
         {
-            tokenSource.Dispose();
             tokenSource = new();
-
             SearchActive = true;
+
             Entries.Clear();
             LoadingProgress = 0;
             MaxValues = 0;
-            kindsSearch = MainViewModel.GetSelectedItems(ValueKinds, UsedValueKinds.ToList());
-            List<RegistryKey> rootKeys = MainViewModel.GetSelectedItems(RootKeys, UsedRootKeys.ToList());
+            kindsSearch = GetSelectedItems(ValueKinds, [.. UsedValueKinds]);
+            List<RegistryKey> rootKeys = GetSelectedItems(RootKeys, [.. UsedRootKeys]);
 
             List<Task> tasks = [];
             foreach (RegistryKey rootKey in rootKeys)
@@ -142,12 +141,14 @@ namespace rex.ViewModel
                 LoadingProgress += 100 / rootKeys.Count;
             }
 
+            tokenSource.Dispose();
+            tokenSource = null;
             SearchActive = false;
         }
 
         private void CancelSearch()
         {
-            tokenSource.Cancel();
+            tokenSource?.Cancel();
         }
 
         private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, CancellationToken token)
@@ -189,7 +190,7 @@ namespace rex.ViewModel
 
         private void ExportData()
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog
+            SaveFileDialog saveFileDialog = new()
             {
                 Filter = "CSV file (*.csv)|*.csv",
                 FileName = "export.csv"
@@ -218,7 +219,7 @@ namespace rex.ViewModel
 
         private static void ExportRegistryEntriesToCsv(List<RegistryEntry> Entries, string filePath)
         {
-            var sb = new StringBuilder();
+            StringBuilder sb = new();
             sb.AppendLine("Path,Name,Value,Kind");
             foreach (RegistryEntry re in Entries)
             {

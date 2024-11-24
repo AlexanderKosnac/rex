@@ -80,8 +80,8 @@
                     <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5" >
-                    <Button Content="Search" Margin="0,0,5,0"  Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchActive, Converter={StaticResource InvertBoolConverter}, Mode=OneWay}"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5">
+                    <Button Content="Search" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchActive, Converter={StaticResource InvertBoolConverter}, Mode=OneWay}" Margin="0,0,5,0"/>
                     <Button Content="Cancel" Command="{Binding CancelSearchCommand}" IsEnabled="{Binding SearchActive}"/>
                 </StackPanel>
             </Grid>
