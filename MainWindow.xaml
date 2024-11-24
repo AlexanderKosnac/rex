@@ -86,7 +86,7 @@
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="">
+            <DataGrid Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding Entries}" SelectedItem="" HeadersVisibility="Column" >
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Path" Width="1*" Binding="{Binding KeyPath}" />
                     <DataGridTextColumn Header="Name" Width="1*" Binding="{Binding ValueName}" />
