@@ -1,8 +1,6 @@
-﻿using rex.MVVM;
-
-namespace rex.ViewModel
+﻿namespace rex.ViewModel
 {
-    internal class HelpViewModel : ViewModelBase
+    internal class HelpViewModel
     {
         public HelpViewModel()
         {

@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Win32;
 using rex.Model;
 using rex.MVVM;
 using rex.Views;
@@ -10,88 +11,35 @@ using System.Windows;
 
 namespace rex.ViewModel
 {
-    internal class MainViewModel : ViewModelBase
+    internal partial class MainViewModel : ObservableObject
     {
         public ObservableCollection<RegistryEntry> Entries { get; set; }
 
+        private CancellationTokenSource? tokenSource;
+
+        [ObservableProperty]
         public string pathSearch = "";
-        public string PathSearch
-        {
-            get { return pathSearch; }
-            set
-            {
-                pathSearch = value;
-                OnPropertyChanged();
-            }
-        }
 
+        [ObservableProperty]
         public string nameSearch = "";
-        public string NameSearch
-        {
-            get { return nameSearch; }
-            set
-            {
-                nameSearch = value;
-                OnPropertyChanged();
-            }
-        }
 
+        [ObservableProperty]
         public string valueSearch = "";
-        public string ValueSearch
-        {
-            get { return valueSearch; }
-            set
-            {
-                valueSearch = value;
-                OnPropertyChanged();
-            }
-        }
 
+        [ObservableProperty]
         public bool searchActive = false;
-        public bool SearchActive {
-            get { return searchActive; }
-            set {
-                searchActive = value;
-                OnPropertyChanged();
-            }
-        }
 
         List<RegistryValueKind> kindsSearch = [];
 
+        [ObservableProperty]
         private int loadingProgress = 0;
-        public int LoadingProgress
-        {
-            get { return loadingProgress; }
-            set
-            {
-                loadingProgress = value;
-                OnPropertyChanged();
-            }
-        }
 
+        [ObservableProperty]
         private int maxValues = 0;
-        public int MaxValues
-        {
-            get { return maxValues; }
-            set
-            {
-                maxValues = value;
-                OnPropertyChanged();
-            }
-        }
 
         public ObservableCollection<bool> UsedValueKinds { get; set; }
 
-        readonly List<RegistryValueKind> ValueKinds = [
-            RegistryValueKind.Binary,
-            RegistryValueKind.MultiString,
-            RegistryValueKind.None,
-            RegistryValueKind.Unknown,
-            RegistryValueKind.String,
-            RegistryValueKind.ExpandString,
-            RegistryValueKind.DWord,
-            RegistryValueKind.QWord
-        ];
+        readonly List<RegistryValueKind> ValueKinds = Enum.GetValues(typeof(RegistryValueKind)).Cast<RegistryValueKind>().ToList();
 
         public ObservableCollection<bool> UsedRootKeys { get; set; }
 
@@ -102,8 +50,6 @@ namespace rex.ViewModel
             Registry.Users,
             Registry.CurrentConfig
         ];
-
-        CancellationTokenSource? tokenSource;
 
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
         public RelayCommand ExportDataCommand => new(execute => ExportData());
@@ -204,8 +150,7 @@ namespace rex.ViewModel
 
         private void OpenAbout()
         {
-            HelpWindow w = new();
-            w.ShowDialog();
+            new HelpWindow().ShowDialog();
         }
 
         private static List<T> GetSelectedItems<T>(List<T> Items, List<bool> Selected)
