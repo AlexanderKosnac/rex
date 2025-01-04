@@ -10,6 +10,7 @@
         Title="ReX - Registry Explorer" Height="450" Width="800">
     <Window.Resources>
         <converter:InvertBoolConverter x:Key="InvertBoolConverter" />
+        <converter:StringWithUnderscoreConverter x:Key="StringWithUnderscoreConverter" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -60,24 +61,24 @@
                     <TextBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="{Binding ValueSearch}" VerticalAlignment="Center"/>
                 </Grid>
 
-
                 <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5">
-                    <CheckBox Content="Binary" IsChecked="{Binding UsedValueKinds[0]}" />
-                    <CheckBox Content="MultiString" IsChecked="{Binding UsedValueKinds[1]}" />
-                    <CheckBox Content="None" IsChecked="{Binding UsedValueKinds[2]}" />
-                    <CheckBox Content="Unknown" IsChecked="{Binding UsedValueKinds[3]}" />
-                    <CheckBox Content="String" IsChecked="{Binding UsedValueKinds[4]}" />
-                    <CheckBox Content="ExpandString" IsChecked="{Binding UsedValueKinds[5]}" />
-                    <CheckBox Content="DWord" IsChecked="{Binding UsedValueKinds[6]}" />
-                    <CheckBox Content="QWord" IsChecked="{Binding UsedValueKinds[7]}" />
+                    <ItemsControl ItemsSource="{Binding ValueKinds}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding Object}" IsChecked="{Binding IsSelected}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5">
-                    <CheckBox Content="HKEY__CLASSES__ROOT" IsChecked="{Binding UsedRootKeys[0]}" />
-                    <CheckBox Content="HKEY__CURRENT__USER" IsChecked="{Binding UsedRootKeys[1]}" />
-                    <CheckBox Content="HKEY__LOCAL__MACHINE" IsChecked="{Binding UsedRootKeys[2]}" />
-                    <CheckBox Content="HKEY__USERS" IsChecked="{Binding UsedRootKeys[3]}" />
-                    <CheckBox Content="HKEY__CURRENT__CONFIG" IsChecked="{Binding UsedRootKeys[4]}" />
+                    <ItemsControl ItemsSource="{Binding RootKeys}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Content="{Binding DisplayString, Converter={StaticResource StringWithUnderscoreConverter}}" IsChecked="{Binding IsSelected}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5">

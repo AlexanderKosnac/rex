@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Win32;
+using rex.Core.DataStructure;
 using rex.Model;
 using rex.MVVM;
 using rex.Views;
@@ -26,10 +27,10 @@ namespace rex.ViewModel
         [ObservableProperty]
         public string valueSearch = "";
 
+        public List<RegistryValueKind> kindsSearch = [];
+
         [ObservableProperty]
         public bool searchActive = false;
-
-        List<RegistryValueKind> kindsSearch = [];
 
         [ObservableProperty]
         private int loadingProgress = 0;
@@ -37,18 +38,23 @@ namespace rex.ViewModel
         [ObservableProperty]
         private int maxValues = 0;
 
-        public ObservableCollection<bool> UsedValueKinds { get; set; }
+        public ObservableCollection<RegistryValueKindItem> ValueKinds { get; set; } = [
+            new(RegistryValueKind.None, true),
+            new(RegistryValueKind.Unknown, true),
+            new(RegistryValueKind.String, true),
+            new(RegistryValueKind.ExpandString, true),
+            new(RegistryValueKind.Binary, true),
+            new(RegistryValueKind.DWord, true),
+            new(RegistryValueKind.MultiString, true),
+            new(RegistryValueKind.QWord, true),
+        ];
 
-        readonly List<RegistryValueKind> ValueKinds = Enum.GetValues(typeof(RegistryValueKind)).Cast<RegistryValueKind>().ToList();
-
-        public ObservableCollection<bool> UsedRootKeys { get; set; }
-
-        readonly List<RegistryKey> RootKeys = [
-            Registry.ClassesRoot,
-            Registry.CurrentUser,
-            Registry.LocalMachine,
-            Registry.Users,
-            Registry.CurrentConfig
+        public ObservableCollection<RegistryKeyItem> RootKeys { get; set; } = [
+            new("HKEY_CLASSES_ROOT", Registry.ClassesRoot, false),
+            new("HKEY_CURRENT_USER", Registry.CurrentUser, false),
+            new("HKEY_LOCAL_MACHINE", Registry.LocalMachine, false),
+            new("HKEY_USERS", Registry.Users, false),
+            new("HKEY_CURRENT_CONFIG", Registry.CurrentConfig, false),
         ];
 
         public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
@@ -59,8 +65,6 @@ namespace rex.ViewModel
         public MainViewModel()
         {
             Entries = [];
-            UsedValueKinds = new(Enumerable.Repeat(true, ValueKinds.Count).ToList());
-            UsedRootKeys = new(Enumerable.Repeat(false, RootKeys.Count).ToList());
         }
 
         private async Task FetchRegistryEntries()
@@ -71,20 +75,21 @@ namespace rex.ViewModel
             Entries.Clear();
             LoadingProgress = 0;
             MaxValues = 0;
-            kindsSearch = GetSelectedItems(ValueKinds, [.. UsedValueKinds]);
-            List<RegistryKey> rootKeys = GetSelectedItems(RootKeys, [.. UsedRootKeys]);
+            kindsSearch = ValueKinds.Where(k => k.IsSelected).Select(k => k.Object).ToList();
 
             List<Task> tasks = [];
-            foreach (RegistryKey rootKey in rootKeys)
+            foreach (RegistryKeyItem key in RootKeys)
             {
-                Task task = Task.Run(() => RecursiveRegistryValueCollector(rootKey, "", tokenSource.Token));
+                if (!key.IsSelected)
+                    continue;
+                Task task = Task.Run(() => RecursiveRegistryValueCollector(key.Object, "", tokenSource.Token));
                 tasks.Add(task);
             }
             while (tasks.Count > 0)
             {
                 Task done = await Task.WhenAny(tasks);
                 tasks.Remove(done);
-                LoadingProgress += 100 / rootKeys.Count;
+                LoadingProgress += 100 / RootKeys.Count;
             }
 
             tokenSource.Dispose();
@@ -102,29 +107,29 @@ namespace rex.ViewModel
             if (OpenSubKeyOrNull(baseKey, subKey) is not RegistryKey key)
                 return;
 
-                    foreach (string valueName in key.GetValueNames())
-                    {
-                        if (token.IsCancellationRequested)
-                            return;
+            foreach (string valueName in key.GetValueNames())
+            {
+                if (token.IsCancellationRequested)
+                    return;
 
-                        RegistryEntry re = new(key, valueName);
-                        MaxValues++;
+                RegistryEntry re = new(key, valueName);
+                MaxValues++;
 
-                        bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
-                        bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
-                        bool matchesByValue = ValueSearch == "" || re.Value.Contains(ValueSearch);
-                        bool matchesByKind = kindsSearch.Contains(re.Kind);
-                        if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
-                        {
+                bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
+                bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
+                bool matchesByValue = ValueSearch == "" || re.Value.Contains(ValueSearch);
+                bool matchesByKind = kindsSearch.Contains(re.Kind);
+                if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
+                {
                     Application.Current.Dispatcher.InvokeAsync(() => Entries.Add(re));
-                        }
-                    }
-
-                    foreach (string subKeyName in key.GetSubKeyNames())
-                    {
-                        RecursiveRegistryValueCollector(key, subKeyName, token);
-                    }
                 }
+            }
+
+            foreach (string subKeyName in key.GetSubKeyNames())
+            {
+                RecursiveRegistryValueCollector(key, subKeyName, token);
+            }
+        }
 
         private RegistryKey? OpenSubKeyOrNull(RegistryKey baseKey, string subKey)
         {
@@ -146,7 +151,7 @@ namespace rex.ViewModel
                 FileName = "export.csv"
             };
 
-            if (saveFileDialog.ShowDialog() == true)
+            if (saveFileDialog.ShowDialog() is bool r && r)
             {
                 ExportRegistryEntriesToCsv([.. Entries], saveFileDialog.FileName);
             }
@@ -155,15 +160,6 @@ namespace rex.ViewModel
         private void OpenAbout()
         {
             new HelpWindow().ShowDialog();
-        }
-
-        private static List<T> GetSelectedItems<T>(List<T> Items, List<bool> Selected)
-        {
-            return Items
-                .Zip(Selected, (obj, used) => new { obj, used })
-                .Where(x => x.used)
-                .Select(x => x.obj)
-                .ToList();
         }
 
         private static void ExportRegistryEntriesToCsv(List<RegistryEntry> Entries, string filePath)
