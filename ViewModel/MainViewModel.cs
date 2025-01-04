@@ -4,8 +4,8 @@ using rex.Model;
 using rex.MVVM;
 using rex.Views;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
+using System.Security;
 using System.Text;
 using System.Windows;
 
@@ -99,11 +99,9 @@ namespace rex.ViewModel
 
         private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, CancellationToken token)
         {
-            try
-            {
-                using RegistryKey? key = baseKey.OpenSubKey(subKey);
-                if (key != null)
-                {
+            if (OpenSubKeyOrNull(baseKey, subKey) is not RegistryKey key)
+                return;
+
                     foreach (string valueName in key.GetValueNames())
                     {
                         if (token.IsCancellationRequested)
@@ -118,7 +116,7 @@ namespace rex.ViewModel
                         bool matchesByKind = kindsSearch.Contains(re.Kind);
                         if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                         {
-                            Application.Current.Dispatcher.Invoke(() => Entries.Add(re));
+                    Application.Current.Dispatcher.InvokeAsync(() => Entries.Add(re));
                         }
                     }
 
@@ -127,10 +125,16 @@ namespace rex.ViewModel
                         RecursiveRegistryValueCollector(key, subKeyName, token);
                     }
                 }
-            }
-            catch (System.Security.SecurityException)
+
+        private RegistryKey? OpenSubKeyOrNull(RegistryKey baseKey, string subKey)
+        {
+            try
             {
-                Debug.WriteLine($"Not allowed to open key {subKey}");
+                return baseKey.OpenSubKey(subKey);
+            }
+            catch (SecurityException)
+            {
+                return null;
             }
         }
 
@@ -167,9 +171,7 @@ namespace rex.ViewModel
             StringBuilder sb = new();
             sb.AppendLine("Path,Name,Value,Kind");
             foreach (RegistryEntry re in Entries)
-            {
                 sb.AppendLine(re.ToCSV());
-            }
             File.WriteAllText(filePath, sb.ToString());
         }
     }
