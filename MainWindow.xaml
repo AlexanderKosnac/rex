@@ -82,8 +82,8 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,5,5">
-                    <Button Content="Search" Command="{Binding LoadDataCommand}" IsEnabled="{Binding SearchActive, Converter={StaticResource InvertBoolConverter}, Mode=OneWay}" Margin="0,0,5,0"/>
-                    <Button Content="Cancel" Command="{Binding CancelSearchCommand}" IsEnabled="{Binding SearchActive}"/>
+                    <Button Content="Search" Command="{Binding SearchDataCommand}" Margin="0,0,5,0"/>
+                    <Button Content="Cancel" Command="{Binding SearchDataCancelCommand}"/>
                 </StackPanel>
             </Grid>
 

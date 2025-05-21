@@ -1,8 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using rex.Core.DataStructure;
 using rex.Model;
-using rex.MVVM;
 using rex.Views;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -14,31 +14,29 @@ namespace rex.ViewModel
 {
     internal partial class MainViewModel : ObservableObject
     {
-        public ObservableCollection<RegistryEntry> Entries { get; set; }
-
-        private CancellationTokenSource? tokenSource;
+        public ObservableCollection<RegistryEntry> Entries { get; } = [];
 
         [ObservableProperty]
-        public string pathSearch = "";
+        private string _pathSearch = "";
 
         [ObservableProperty]
-        public string nameSearch = "";
+        private string _nameSearch = "";
 
         [ObservableProperty]
-        public string valueSearch = "";
+        private string _valueSearch = "";
 
         public List<RegistryValueKind> kindsSearch = [];
 
         [ObservableProperty]
-        public bool searchActive = false;
+        private bool _searchActive = false;
 
         [ObservableProperty]
-        private int loadingProgress = 0;
+        private int _loadingProgress = 0;
 
         [ObservableProperty]
-        private int maxValues = 0;
+        private int _maxValues = 0;
 
-        public ObservableCollection<RegistryValueKindItem> ValueKinds { get; set; } = [
+        public ObservableCollection<RegistryValueKindItem> ValueKinds { get; } = [
             new(RegistryValueKind.None, true),
             new(RegistryValueKind.Unknown, true),
             new(RegistryValueKind.String, true),
@@ -57,52 +55,40 @@ namespace rex.ViewModel
             new("HKEY_CURRENT_CONFIG", Registry.CurrentConfig, false),
         ];
 
-        public RelayCommand OpenAboutCommand => new(execute => OpenAbout());
-        public RelayCommand ExportDataCommand => new(execute => ExportData());
-        public RelayCommand LoadDataCommand => new(async (execute) => await FetchRegistryEntries(), canExecute => !SearchActive);
-        public RelayCommand CancelSearchCommand => new(execute => CancelSearch(), canExecute => SearchActive);
-
-        public MainViewModel()
+        [RelayCommand(AllowConcurrentExecutions = false, FlowExceptionsToTaskScheduler = true, IncludeCancelCommand = true)]
+        public async Task SearchData(CancellationToken token)
         {
-            Entries = [];
-        }
+            await Application.Current.Dispatcher.InvokeAsync(() => {
+                Entries.Clear();
+                LoadingProgress = 0;
+                MaxValues = 0;
+                kindsSearch = [.. ValueKinds.Where(k => k.IsSelected).Select(k => k.Object)];
+            });
 
-        private async Task FetchRegistryEntries()
-        {
-            tokenSource = new();
-            SearchActive = true;
-
-            Entries.Clear();
-            LoadingProgress = 0;
-            MaxValues = 0;
-            kindsSearch = ValueKinds.Where(k => k.IsSelected).Select(k => k.Object).ToList();
+            void AddToEntries(RegistryEntry entry)
+            {
+                Application.Current.Dispatcher.InvokeAsync(() => Entries.Add(entry));
+            }
 
             List<Task> tasks = [];
             foreach (RegistryKeyItem key in RootKeys)
             {
                 if (!key.IsSelected)
                     continue;
-                Task task = Task.Run(() => RecursiveRegistryValueCollector(key.Object, "", tokenSource.Token));
+                Task task = Task.Run(() => RecursiveRegistryValueCollector(key.Object, "", AddToEntries, token), token);
                 tasks.Add(task);
             }
             while (tasks.Count > 0)
             {
                 Task done = await Task.WhenAny(tasks);
                 tasks.Remove(done);
-                LoadingProgress += 100 / RootKeys.Count;
+                await Application.Current.Dispatcher.InvokeAsync(() => {
+                    LoadingProgress += (int)(100.0 / RootKeys.Count);
+                });
             }
-
-            tokenSource.Dispose();
-            tokenSource = null;
-            SearchActive = false;
         }
 
-        private void CancelSearch()
-        {
-            tokenSource?.Cancel();
-        }
-
-        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, CancellationToken token)
+        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, Action<RegistryEntry> onEntryFound, CancellationToken token)
         {
             if (OpenSubKeyOrNull(baseKey, subKey) is not RegistryKey key)
                 return;
@@ -121,17 +107,17 @@ namespace rex.ViewModel
                 bool matchesByKind = kindsSearch.Contains(re.Kind);
                 if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                 {
-                    Application.Current.Dispatcher.InvokeAsync(() => Entries.Add(re));
+                    onEntryFound(re);
                 }
             }
 
             foreach (string subKeyName in key.GetSubKeyNames())
             {
-                RecursiveRegistryValueCollector(key, subKeyName, token);
+                RecursiveRegistryValueCollector(key, subKeyName, onEntryFound, token);
             }
         }
 
-        private RegistryKey? OpenSubKeyOrNull(RegistryKey baseKey, string subKey)
+        private static RegistryKey? OpenSubKeyOrNull(RegistryKey baseKey, string subKey)
         {
             try
             {
@@ -143,7 +129,8 @@ namespace rex.ViewModel
             }
         }
 
-        private void ExportData()
+        [RelayCommand]
+        public void ExportData()
         {
             SaveFileDialog saveFileDialog = new()
             {
@@ -152,12 +139,11 @@ namespace rex.ViewModel
             };
 
             if (saveFileDialog.ShowDialog() is bool r && r)
-            {
                 ExportRegistryEntriesToCsv([.. Entries], saveFileDialog.FileName);
-            }
         }
 
-        private void OpenAbout()
+        [RelayCommand]
+        public void OpenAbout()
         {
             new HelpWindow().ShowDialog();
         }
