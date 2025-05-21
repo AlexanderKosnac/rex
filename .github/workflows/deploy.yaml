@@ -20,7 +20,7 @@ jobs:
       - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
 
       - name: .NET Restore Dependencies
         run: dotnet restore ${{ env.PROJECT_PATH }} --runtime win-x64
@@ -45,13 +45,13 @@ jobs:
       - name: Proper name for exe
         run: |
           $newFileName = "${{ github.event.repository.name }}-${{ github.ref_name }}.exe"
-          Rename-Item -Path "bin/Release/net8.0-windows/win-x64/publish/rex.exe" -NewName $newFileName
+          Rename-Item -Path "bin/Release/net9.0-windows/win-x64/publish/rex.exe" -NewName $newFileName
 
       - name: Add exe to GitHub release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: bin/Release/net8.0-windows/win-x64/publish/${{ github.event.repository.name }}-${{ github.ref_name }}.exe
+          file: bin/Release/net9.0-windows/win-x64/publish/${{ github.event.repository.name }}-${{ github.ref_name }}.exe
           tag: ${{ github.ref }}
           overwrite: true
           file_glob: false
