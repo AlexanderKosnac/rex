@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Security;
 using System.Text;
+using System.Threading.Tasks.Dataflow;
 using System.Windows;
 
 namespace rex.ViewModel
@@ -36,6 +37,7 @@ namespace rex.ViewModel
         [ObservableProperty]
         private int _maxValues = 0;
 
+        // Refactor this
         public ObservableCollection<RegistryValueKindItem> ValueKinds { get; } = [
             new(RegistryValueKind.None, true),
             new(RegistryValueKind.Unknown, true),
@@ -47,6 +49,7 @@ namespace rex.ViewModel
             new(RegistryValueKind.QWord, true),
         ];
 
+        // Refactor this
         public ObservableCollection<RegistryKeyItem> RootKeys { get; set; } = [
             new("HKEY_CLASSES_ROOT", Registry.ClassesRoot, false),
             new("HKEY_CURRENT_USER", Registry.CurrentUser, false),
@@ -58,53 +61,82 @@ namespace rex.ViewModel
         [RelayCommand(AllowConcurrentExecutions = false, FlowExceptionsToTaskScheduler = true, IncludeCancelCommand = true)]
         public async Task SearchData(CancellationToken token)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
                 Entries.Clear();
                 LoadingProgress = 0;
                 MaxValues = 0;
                 kindsSearch = [.. ValueKinds.Where(k => k.IsSelected).Select(k => k.Object)];
             });
 
+            const int bufferThreshold = 1000;
+            List<RegistryEntry> buffer = [];
+            object bufferLock = new();
+
+            async Task FlushBufferAsync()
+            {
+                List<RegistryEntry> toAdd;
+
+                lock (bufferLock)
+                {
+                    toAdd = [.. buffer];
+                    buffer.Clear();
+                }
+
+                if (toAdd.Count > 0)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var item in toAdd)
+                        {
+                            Entries.Add(item);
+                        }
+                    });
+                }
+            }
+
             void AddToEntries(RegistryEntry entry)
             {
-                Application.Current.Dispatcher.InvokeAsync(() => Entries.Add(entry));
+                bool doFlush;
+
+                lock (bufferLock)
+                {
+                    buffer.Add(entry);
+                    doFlush = buffer.Count >= bufferThreshold;
+                }
+
+                if (doFlush)
+                    _ = FlushBufferAsync();
             }
 
-            List<Task> tasks = [];
-            foreach (RegistryKeyItem key in RootKeys)
+            await Task.Run(() =>
             {
-                if (!key.IsSelected)
-                    continue;
-                Task task = Task.Run(() => RecursiveRegistryValueCollector(key.Object, "", AddToEntries, token), token);
-                tasks.Add(task);
-            }
-            while (tasks.Count > 0)
-            {
-                Task done = await Task.WhenAny(tasks);
-                tasks.Remove(done);
-                await Application.Current.Dispatcher.InvokeAsync(() => {
-                    LoadingProgress += (int)(100.0 / RootKeys.Count);
-                });
-            }
+                foreach (var key in RootKeys.Where(k => k.IsSelected))
+                {
+                    RecursiveRegistryValueVisitor(key.Object, "", AddToEntries, token);
+                }
+            }, token);
+
+            await FlushBufferAsync();
         }
 
-        private void RecursiveRegistryValueCollector(RegistryKey baseKey, string subKey, Action<RegistryEntry> onEntryFound, CancellationToken token)
+        private void RecursiveRegistryValueVisitor(RegistryKey baseKey, string subKey, Action<RegistryEntry> onEntryFound, CancellationToken token)
         {
             if (OpenSubKeyOrNull(baseKey, subKey) is not RegistryKey key)
                 return;
 
             foreach (string valueName in key.GetValueNames())
             {
-                if (token.IsCancellationRequested)
-                    return;
+                token.ThrowIfCancellationRequested();
 
                 RegistryEntry re = new(key, valueName);
                 MaxValues++;
 
-                bool matchesByPath = PathSearch == "" || re.KeyPath.Contains(PathSearch);
-                bool matchesByName = NameSearch == "" || re.ValueName.Contains(NameSearch);
-                bool matchesByValue = ValueSearch == "" || re.Value.Contains(ValueSearch);
+                bool matchesByPath = string.IsNullOrEmpty(PathSearch) || re.KeyPath.Contains(PathSearch);
+                bool matchesByName = string.IsNullOrEmpty(NameSearch) || re.ValueName.Contains(NameSearch);
+                bool matchesByValue = string.IsNullOrEmpty(ValueSearch) || re.Value.Contains(ValueSearch);
                 bool matchesByKind = kindsSearch.Contains(re.Kind);
+
                 if (matchesByPath && matchesByName && matchesByValue && matchesByKind)
                 {
                     onEntryFound(re);
@@ -113,7 +145,7 @@ namespace rex.ViewModel
 
             foreach (string subKeyName in key.GetSubKeyNames())
             {
-                RecursiveRegistryValueCollector(key, subKeyName, onEntryFound, token);
+                RecursiveRegistryValueVisitor(key, subKeyName, onEntryFound, token);
             }
         }
 
@@ -132,14 +164,14 @@ namespace rex.ViewModel
         [RelayCommand]
         public void ExportData()
         {
-            SaveFileDialog saveFileDialog = new()
+            SaveFileDialog dialog = new()
             {
                 Filter = "CSV file (*.csv)|*.csv",
                 FileName = "export.csv"
             };
 
-            if (saveFileDialog.ShowDialog() is bool r && r)
-                ExportRegistryEntriesToCsv([.. Entries], saveFileDialog.FileName);
+            if (dialog.ShowDialog() is bool r && r)
+                ExportRegistryEntriesToCsv([.. Entries], dialog.FileName);
         }
 
         [RelayCommand]
@@ -153,7 +185,7 @@ namespace rex.ViewModel
             StringBuilder sb = new();
             sb.AppendLine("Path,Name,Value,Kind");
             foreach (RegistryEntry re in Entries)
-                sb.AppendLine(re.ToCSV());
+                sb.AppendLine(re.ToCsv());
             File.WriteAllText(filePath, sb.ToString());
         }
     }
