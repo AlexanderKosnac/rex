@@ -32,12 +32,8 @@ namespace rex.ViewModel
         private bool _searchActive = false;
 
         [ObservableProperty]
-        private int _loadingProgress = 0;
-
-        [ObservableProperty]
         private int _maxValues = 0;
 
-        // Refactor this
         public ObservableCollection<RegistryValueKindItem> ValueKinds { get; } = [
             new(RegistryValueKind.None, true),
             new(RegistryValueKind.Unknown, true),
@@ -49,7 +45,6 @@ namespace rex.ViewModel
             new(RegistryValueKind.QWord, true),
         ];
 
-        // Refactor this
         public ObservableCollection<RegistryKeyItem> RootKeys { get; set; } = [
             new("HKEY_CLASSES_ROOT", Registry.ClassesRoot, false),
             new("HKEY_CURRENT_USER", Registry.CurrentUser, false),
@@ -64,7 +59,6 @@ namespace rex.ViewModel
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 Entries.Clear();
-                LoadingProgress = 0;
                 MaxValues = 0;
                 kindsSearch = [.. ValueKinds.Where(k => k.IsSelected).Select(k => k.Object)];
             });
